@@ -1,1 +1,18 @@
-export const userSchema = ``;
+export const userSchema = `#graphql
+  type LoginToken {
+    token: String!
+  }
+
+  input UserCredentialsInput {
+    email: String!
+    password: String!
+  }
+
+  type Query {
+    loginUser(user: UserCredentialsInput!): LoginToken
+  }
+
+  type Mutation {
+    createUser(user: UserCredentialsInput!): LoginToken
+  }
+`;
