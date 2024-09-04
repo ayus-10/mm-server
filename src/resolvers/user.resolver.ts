@@ -68,6 +68,10 @@ export const userResolver = {
       });
       return { token };
     }),
+    auth: (_parent: unknown, _args: unknown, ctx: AuthContext) => {
+      const { authEmail } = ctx;
+      return authEmail;
+    },
   },
   Mutation: {
     createUser: checkLoggedIn(async (_: unknown, args: UserCredentials) => {

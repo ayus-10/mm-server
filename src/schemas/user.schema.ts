@@ -10,6 +10,7 @@ export const userSchema = `#graphql
 
   type Query {
     loginUser(user: UserCredentialsInput!): LoginToken
+    auth: String
   }
 
   type Mutation {
