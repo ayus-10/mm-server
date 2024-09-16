@@ -9,6 +9,7 @@ interface UserCredentials {
   user: {
     email: string;
     password: string;
+    fullName?: string;
   };
 }
 
@@ -68,16 +69,28 @@ export const userResolver = {
       });
       return { token };
     }),
-    auth: (_parent: unknown, _args: unknown, ctx: AuthContext) => {
+    auth: async (_parent: unknown, _args: unknown, ctx: AuthContext) => {
       const { authEmail } = ctx;
-      return authEmail;
+      if (!authEmail) {
+        throw new GraphQLError("You are not logged in");
+      }
+
+      const user = await prisma.user.findFirst({
+        where: { email: authEmail },
+      });
+
+      return { email: authEmail, fullName: String(user?.fullName) };
     },
   },
   Mutation: {
     createUser: checkLoggedIn(async (_: unknown, args: UserCredentials) => {
       const {
-        user: { email, password },
+        user: { email, password, fullName },
       } = args;
+
+      if (!fullName) {
+        throw new GraphQLError("Full name required to sign up");
+      }
 
       const userFound = await prisma.user.findFirst({
         where: { email: email },
@@ -97,7 +110,7 @@ export const userResolver = {
 
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await prisma.user.create({
-        data: { email, password: hashedPassword },
+        data: { email, password: hashedPassword, fullName },
       });
 
       const token = jwt.sign({ email }, JWT_SECRET, {

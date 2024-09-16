@@ -3,17 +3,28 @@ export const userSchema = `#graphql
     token: String!
   }
 
-  input UserCredentialsInput {
+  type UserData {
+    fullName: String!
+    email: String!
+  }
+
+  input LoginInput {
     email: String!
     password: String!
   }
 
+  input SignupInput {
+    email: String!
+    password: String!
+    fullName: String!
+  }
+
   type Query {
-    loginUser(user: UserCredentialsInput!): LoginToken
-    auth: String
+    loginUser(user: LoginInput!): LoginToken
+    auth: UserData
   }
 
   type Mutation {
-    createUser(user: UserCredentialsInput!): LoginToken
+    createUser(user: SignupInput!): LoginToken
   }
 `;
