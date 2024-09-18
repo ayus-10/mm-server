@@ -16,7 +16,7 @@ startStandaloneServer(server, {
     let authEmail: string | null;
     try {
       const tokenData = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
-      const email = tokenData.email as string;
+      const email = String(tokenData.email);
       authEmail = email;
     } catch {
       authEmail = null;

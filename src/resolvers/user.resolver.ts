@@ -4,6 +4,7 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config";
+import { AuthContext } from "../interfaces/auth-context.interface";
 
 interface UserCredentials {
   user: {
@@ -11,10 +12,6 @@ interface UserCredentials {
     password: string;
     fullName?: string;
   };
-}
-
-interface AuthContext {
-  authEmail?: string;
 }
 
 const PASSWORD_OPTIONS = {
@@ -26,7 +23,7 @@ const PASSWORD_OPTIONS = {
 
 const prisma = new PrismaClient();
 
-const checkLoggedIn = (resolver: Function) => {
+const isAlreadyLoggedIn = (resolver: Function) => {
   return (
     parent: unknown,
     args: UserCredentials,
@@ -44,7 +41,7 @@ const checkLoggedIn = (resolver: Function) => {
 
 export const userResolver = {
   Query: {
-    loginUser: checkLoggedIn(async (_: unknown, args: UserCredentials) => {
+    loginUser: isAlreadyLoggedIn(async (_: unknown, args: UserCredentials) => {
       const {
         user: { email, password },
       } = args;
@@ -83,7 +80,7 @@ export const userResolver = {
     },
   },
   Mutation: {
-    createUser: checkLoggedIn(async (_: unknown, args: UserCredentials) => {
+    createUser: isAlreadyLoggedIn(async (_: unknown, args: UserCredentials) => {
       const {
         user: { email, password, fullName },
       } = args;
