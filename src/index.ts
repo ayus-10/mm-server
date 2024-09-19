@@ -1,14 +1,19 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
-import { typeDefs } from "./schemas";
-import { resolvers } from "./resolvers";
 import { JWT_SECRET, PORT } from "./config";
 import jwt from "jsonwebtoken";
+import { makeExecutableSchema } from "@graphql-tools/schema";
+import { userSchema } from "./schemas/user.schema";
+import { friendRequestSchema } from "./schemas/friend-request.schema";
+import { userResolver } from "./resolvers/user.resolver";
+import { friendRequestResolver } from "./resolvers/friend-request.resolver";
 
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
+const schema = makeExecutableSchema({
+  typeDefs: [userSchema, friendRequestSchema],
+  resolvers: [userResolver, friendRequestResolver],
 });
+
+const server = new ApolloServer({ schema });
 
 startStandaloneServer(server, {
   context: async ({ req }) => {
