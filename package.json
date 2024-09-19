@@ -26,6 +26,7 @@
     "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
     "graphql": "^16.9.0",
+    "graphql-tag": "^2.12.6",
     "jsonwebtoken": "^9.0.2",
     "validator": "^13.12.0"
   }

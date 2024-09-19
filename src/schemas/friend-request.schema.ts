@@ -1,4 +1,6 @@
-export const friendRequestSchema = `#graphql
+import gql from "graphql-tag";
+
+export const friendRequestSchema = gql`
   type FriendRequest {
     id: ID!
     sender: String!
@@ -13,13 +15,13 @@ export const friendRequestSchema = `#graphql
   }
 
   type Mutation {
-    sendFriendRequest(receiver: String!): FriendRequest
-    acceptFriendRequest(id: ID!): FriendRequest
-    rejectFriendRequest(id: ID!): FriendRequest
-    cancelFriendRequest(id: ID!): FriendRequest
+    sendFriendRequest(receiver: String!): FriendRequest!
+    acceptFriendRequest(id: ID!): FriendRequest!
+    rejectFriendRequest(id: ID!): FriendRequest!
+    cancelFriendRequest(id: ID!): FriendRequest!
   }
 
   type Query {
-    getFriendRequests: AllFriendRequests
+    getFriendRequests: AllFriendRequests!
   }
 `;

@@ -1,4 +1,6 @@
-export const userSchema = `#graphql
+import gql from "graphql-tag";
+
+export const userSchema = gql`
   type LoginToken {
     token: String!
   }
@@ -20,11 +22,11 @@ export const userSchema = `#graphql
   }
 
   type Query {
-    loginUser(user: LoginInput!): LoginToken
-    auth: UserData
+    loginUser(user: LoginInput!): LoginToken!
+    auth: UserData!
   }
 
   type Mutation {
-    createUser(user: SignupInput!): LoginToken
+    createUser(user: SignupInput!): LoginToken!
   }
 `;
