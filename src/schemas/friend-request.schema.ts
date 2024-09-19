@@ -7,6 +7,11 @@ export const friendRequestSchema = `#graphql
     status: String!
   }
 
+  type AllFriendRequests {
+    sent: [FriendRequest!]
+    received: [FriendRequest!]
+  }
+
   type Mutation {
     sendFriendRequest(receiver: String!): FriendRequest
     acceptFriendRequest(id: ID!): FriendRequest
@@ -15,6 +20,6 @@ export const friendRequestSchema = `#graphql
   }
 
   type Query {
-    getFriendRequests: [FriendRequest!]
+    getFriendRequests: AllFriendRequests
   }
 `;

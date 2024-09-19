@@ -23,9 +23,78 @@ const isLoggedIn = (resolver: Function) => {
   };
 };
 
+const handleFriendRequest = (resolver: Function) => {
+  return async (
+    parent: unknown,
+    args: HandleFriendRequestArgs,
+    ctx: AuthContext,
+    info: unknown,
+  ) => {
+    const { id } = args;
+
+    const user = String(ctx.authEmail);
+
+    const friendRequest = await prisma.friendRequest.findFirst({
+      where: { id },
+    });
+
+    const receiver = friendRequest?.receiver;
+    const status = friendRequest?.status;
+
+    if (user !== receiver) {
+      throw new GraphQLError("Not authorized to accept the request");
+    }
+    if (status !== "PENDING") {
+      throw new GraphQLError("The request has already been handled");
+    }
+
+    return resolver(parent, args, ctx, info);
+  };
+};
+
+const isValidId = (resolver: Function) => {
+  return async (
+    parent: unknown,
+    args: HandleFriendRequestArgs,
+    ctx: AuthContext,
+    info: unknown,
+  ) => {
+    const { id } = args;
+    if (!id) {
+      throw new GraphQLError("Please provide the ID");
+    }
+
+    const friendRequest = await prisma.friendRequest.findFirst({
+      where: { id },
+    });
+    if (!friendRequest) {
+      throw new GraphQLError("Invalid ID");
+    }
+
+    return resolver(parent, args, ctx, info);
+  };
+};
+
 export const friendRequestResolver = {
   Query: {
-    getFriendRequests: isLoggedIn(() => {}),
+    getFriendRequests: isLoggedIn(
+      async (_parent: unknown, _args: unknown, ctx: AuthContext) => {
+        const user = String(ctx.authEmail);
+
+        const sentRequests = await prisma.friendRequest.findMany({
+          where: { AND: [{ sender: user }, { status: "PENDING" }] },
+        });
+
+        const receivedRequests = await prisma.friendRequest.findMany({
+          where: { AND: [{ receiver: user }, { status: "PENDING" }] },
+        });
+
+        return {
+          sent: sentRequests,
+          received: receivedRequests,
+        };
+      },
+    ),
   },
   Mutation: {
     sendFriendRequest: isLoggedIn(
@@ -62,46 +131,70 @@ export const friendRequestResolver = {
       },
     ),
     acceptFriendRequest: isLoggedIn(
-      async (_: unknown, args: HandleFriendRequestArgs, ctx: AuthContext) => {
-        const { id } = args;
-        if (!id) {
-          throw new GraphQLError("Please provide the ID");
-        }
+      isValidId(
+        handleFriendRequest(
+          async (
+            _parent: unknown,
+            args: HandleFriendRequestArgs,
+            _ctx: unknown,
+          ) => {
+            const { id } = args;
 
-        const user = String(ctx.authEmail);
+            const updatedFriendRequest = await prisma.friendRequest.update({
+              where: { id },
+              data: {
+                status: "ACCEPTED",
+              },
+            });
 
-        const friendRequest = await prisma.friendRequest.findFirst({
-          where: { id },
-        });
-
-        if (!friendRequest) {
-          throw new GraphQLError("Invalid ID");
-        }
-
-        const { sender, receiver, status } = friendRequest;
-
-        if (user !== receiver) {
-          throw new GraphQLError("Not authorized to accept the request");
-        }
-        if (status !== "PENDING") {
-          throw new GraphQLError("The request has already been handled");
-        }
-
-        const updatedFriendRequest = await prisma.friendRequest.update({
-          where: { id },
-          data: {
-            status: "ACCEPTED",
+            return updatedFriendRequest;
           },
-        });
-
-        return updatedFriendRequest;
-      },
+        ),
+      ),
     ),
     rejectFriendRequest: isLoggedIn(
-      async (_: unknown, args: HandleFriendRequestArgs, ctx: AuthContext) => {},
+      isValidId(
+        handleFriendRequest(
+          async (
+            _parent: unknown,
+            args: HandleFriendRequestArgs,
+            _ctx: unknown,
+          ) => {
+            const { id } = args;
+
+            const updatedFriendRequest = await prisma.friendRequest.update({
+              where: { id },
+              data: {
+                status: "REJECTED",
+              },
+            });
+
+            return updatedFriendRequest;
+          },
+        ),
+      ),
     ),
     cancelFriendRequest: isLoggedIn(
-      async (_: unknown, args: HandleFriendRequestArgs, ctx: AuthContext) => {},
+      isValidId(
+        async (_: unknown, args: HandleFriendRequestArgs, ctx: AuthContext) => {
+          const { id } = args;
+          const friendRequest = await prisma.friendRequest.findFirst({
+            where: { id },
+          });
+
+          const user = String(ctx.authEmail);
+
+          if (friendRequest?.sender !== user) {
+            throw new GraphQLError("Not authorized to cancel the request");
+          }
+
+          const deletedFriendRequest = await prisma.friendRequest.delete({
+            where: { id },
+          });
+
+          return deletedFriendRequest;
+        },
+      ),
     ),
   },
 };
