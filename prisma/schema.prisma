@@ -16,8 +16,8 @@ model User {
 
 model FriendRequest {
   id Int @id @default(autoincrement())
-  sender String
-  receiver String
+  sender Int
+  receiver Int
   sentDate DateTime
   status RequestStatus
 }

@@ -3,7 +3,7 @@ import { AuthContext } from "../interfaces/auth-context.interface";
 import { PrismaClient } from "@prisma/client";
 
 interface SendFriendRequestArgs {
-  receiver: string;
+  receiverId: number;
 }
 
 interface HandleFriendRequestArgs {
@@ -11,6 +11,11 @@ interface HandleFriendRequestArgs {
 }
 
 const prisma = new PrismaClient();
+
+const getIdFromEmail = async (email: string) => {
+  const user = await prisma.user.findFirst({ where: { email } });
+  return user?.id;
+};
 
 const isLoggedIn = (resolver: Function) => {
   return (parent: unknown, args: unknown, ctx: AuthContext, info: unknown) => {
@@ -32,7 +37,9 @@ const handleFriendRequest = (resolver: Function) => {
   ) => {
     const { id } = args;
 
-    const user = String(ctx.authEmail);
+    const userEmail = String(ctx.authEmail);
+
+    const userId = await getIdFromEmail(userEmail);
 
     const friendRequest = await prisma.friendRequest.findFirst({
       where: { id },
@@ -41,8 +48,8 @@ const handleFriendRequest = (resolver: Function) => {
     const receiver = friendRequest?.receiver;
     const status = friendRequest?.status;
 
-    if (user !== receiver) {
-      throw new GraphQLError("Not authorized to accept the request");
+    if (userId !== receiver) {
+      throw new GraphQLError("Not authorized to handle the request");
     }
     if (status !== "PENDING") {
       throw new GraphQLError("The request has already been handled");
@@ -79,14 +86,16 @@ export const friendRequestResolver = {
   Query: {
     getFriendRequests: isLoggedIn(
       async (_parent: unknown, _args: unknown, ctx: AuthContext) => {
-        const user = String(ctx.authEmail);
+        const userEmail = String(ctx.authEmail);
+
+        const userId = Number(await getIdFromEmail(userEmail));
 
         const sentRequests = await prisma.friendRequest.findMany({
-          where: { AND: [{ sender: user }, { status: "PENDING" }] },
+          where: { AND: [{ sender: userId }, { status: "PENDING" }] },
         });
 
         const receivedRequests = await prisma.friendRequest.findMany({
-          where: { AND: [{ receiver: user }, { status: "PENDING" }] },
+          where: { AND: [{ receiver: userId }, { status: "PENDING" }] },
         });
 
         return {
@@ -99,10 +108,13 @@ export const friendRequestResolver = {
   Mutation: {
     sendFriendRequest: isLoggedIn(
       async (_: unknown, args: SendFriendRequestArgs, ctx: AuthContext) => {
-        const receiver = args.receiver;
-        const sender = String(ctx.authEmail);
+        const { receiverId } = args;
 
-        if (!receiver) {
+        const senderEmail = String(ctx.authEmail);
+
+        const senderId = Number(await getIdFromEmail(senderEmail));
+
+        if (!receiverId) {
           throw new GraphQLError("Please provide a receiver");
         }
 
@@ -110,8 +122,8 @@ export const friendRequestResolver = {
         const prevRequest = await prisma.friendRequest.findFirst({
           where: {
             OR: [
-              { sender: sender, receiver: receiver },
-              { sender: receiver, receiver: sender },
+              { sender: senderId, receiver: receiverId },
+              { sender: receiverId, receiver: senderId },
             ],
           },
         });
@@ -120,11 +132,16 @@ export const friendRequestResolver = {
           throw new GraphQLError("Duplicate friend request");
         }
 
-        const date = new Date().toISOString().split("T")[0];
+        const date = new Date().toISOString().slice(0, 23) + "Z";
         const initialStatus = "PENDING";
 
         const friendRequest = await prisma.friendRequest.create({
-          data: { receiver, sender, sentDate: date, status: initialStatus },
+          data: {
+            receiver: receiverId,
+            sender: senderId,
+            sentDate: date,
+            status: initialStatus,
+          },
         });
 
         return friendRequest;
@@ -182,9 +199,10 @@ export const friendRequestResolver = {
             where: { id },
           });
 
-          const user = String(ctx.authEmail);
+          const userEmail = String(ctx.authEmail);
+          const userId = Number(await getIdFromEmail(userEmail));
 
-          if (friendRequest?.sender !== user) {
+          if (friendRequest?.sender !== userId) {
             throw new GraphQLError("Not authorized to cancel the request");
           }
 

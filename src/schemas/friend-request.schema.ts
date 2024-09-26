@@ -3,8 +3,8 @@ import gql from "graphql-tag";
 export const friendRequestSchema = gql`
   type FriendRequest {
     id: ID!
-    sender: String!
-    receiver: String!
+    sender: Int!
+    receiver: Int!
     sentDate: String!
     status: String!
   }
@@ -15,10 +15,10 @@ export const friendRequestSchema = gql`
   }
 
   type Mutation {
-    sendFriendRequest(receiver: String!): FriendRequest!
-    acceptFriendRequest(id: ID!): FriendRequest!
-    rejectFriendRequest(id: ID!): FriendRequest!
-    cancelFriendRequest(id: ID!): FriendRequest!
+    sendFriendRequest(receiverId: Int!): FriendRequest!
+    acceptFriendRequest(id: Int!): FriendRequest!
+    rejectFriendRequest(id: Int!): FriendRequest!
+    cancelFriendRequest(id: Int!): FriendRequest!
   }
 
   type Query {
