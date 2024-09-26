@@ -118,6 +118,10 @@ export const friendRequestResolver = {
           throw new GraphQLError("Please provide a receiver");
         }
 
+        if (senderId === receiverId) {
+          throw new GraphQLError("Sender can't be the receiver");
+        }
+
         // check if an entry exists containing either sender or reciever
         const prevRequest = await prisma.friendRequest.findFirst({
           where: {
