@@ -12,14 +12,18 @@ model User {
   email String @unique
   password String
   fullName String
+  sentRequests FriendRequest[] @relation("SentRequests")
+  receivedRequests FriendRequest[] @relation("ReceivedRequests")
 }
 
 model FriendRequest {
   id Int @id @default(autoincrement())
-  sender Int
-  receiver Int
+  senderId Int
+  receiverId Int
   sentDate DateTime
   status RequestStatus
+  sender User @relation("SentRequests", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedRequests", fields: [receiverId], references: [id])
 }
 
 enum RequestStatus {
