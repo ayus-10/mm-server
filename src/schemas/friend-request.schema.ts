@@ -1,12 +1,27 @@
 import gql from "graphql-tag";
 
 export const friendRequestSchema = gql`
-  type FriendRequest {
+  type User {
+    email: String!
+    fullName: String!
+  }
+
+  type ModifiedFriendRequest {
     id: ID!
-    sender: Int!
-    receiver: Int!
+    senderId: Int!
+    receiverId: Int!
     sentDate: String!
     status: String!
+  }
+
+  type FriendRequest {
+    id: ID!
+    senderId: Int!
+    receiverId: Int!
+    sentDate: String!
+    status: String!
+    sender: User!
+    receiver: User!
   }
 
   type AllFriendRequests {
@@ -15,10 +30,10 @@ export const friendRequestSchema = gql`
   }
 
   type Mutation {
-    sendFriendRequest(receiverId: Int!): FriendRequest!
-    acceptFriendRequest(id: Int!): FriendRequest!
-    rejectFriendRequest(id: Int!): FriendRequest!
-    cancelFriendRequest(id: Int!): FriendRequest!
+    sendFriendRequest(receiverId: Int!): ModifiedFriendRequest!
+    acceptFriendRequest(id: Int!): ModifiedFriendRequest!
+    rejectFriendRequest(id: Int!): ModifiedFriendRequest!
+    cancelFriendRequest(id: Int!): ModifiedFriendRequest!
   }
 
   type Query {
