@@ -10,6 +10,10 @@ interface HandleFriendRequestArgs {
   id: number;
 }
 
+interface FindUserArgs {
+  email: string;
+}
+
 const prisma = new PrismaClient();
 
 const getIdFromEmail = async (email: string) => {
@@ -93,16 +97,16 @@ export const friendRequestResolver = {
         const sentRequests = await prisma.friendRequest.findMany({
           where: { AND: [{ senderId: userId }, { status: "PENDING" }] },
           include: {
-            sender: { select: { email: true, fullName: true } },
-            receiver: { select: { email: true, fullName: true } },
+            sender: { select: { id: true, email: true, fullName: true } },
+            receiver: { select: { id: true, email: true, fullName: true } },
           },
         });
 
         const receivedRequests = await prisma.friendRequest.findMany({
           where: { AND: [{ receiverId: userId }, { status: "PENDING" }] },
           include: {
-            sender: { select: { email: true, fullName: true } },
-            receiver: { select: { email: true, fullName: true } },
+            sender: { select: { id: true, email: true, fullName: true } },
+            receiver: { select: { id: true, email: true, fullName: true } },
           },
         });
 
@@ -110,6 +114,47 @@ export const friendRequestResolver = {
           sent: sentRequests,
           received: receivedRequests,
         };
+      },
+    ),
+    findUser: isLoggedIn(
+      async (_parent: unknown, args: FindUserArgs, ctx: AuthContext) => {
+        const { authEmail } = ctx;
+        const receiverEmail = args.email;
+
+        const receiver = await prisma.user.findFirst({
+          where: { email: receiverEmail },
+        });
+
+        const senderId = await getIdFromEmail(String(authEmail));
+        const receiverId = await getIdFromEmail(String(receiverEmail));
+
+        if (!receiver) {
+          throw new GraphQLError(`Can not find ${receiverEmail}`);
+        }
+
+        if (authEmail === receiverEmail) {
+          throw new GraphQLError("Can not search own account");
+        }
+
+        const friendRequestSent = await prisma.friendRequest.findFirst({
+          where: { senderId, receiverId },
+        });
+
+        const friendRequestReceived = await prisma.friendRequest.findFirst({
+          where: { senderId: receiverId, receiverId: senderId },
+        });
+
+        if (friendRequestSent) {
+          throw new GraphQLError(`Already sent request to ${receiverEmail}`);
+        }
+
+        if (friendRequestReceived) {
+          throw new GraphQLError(
+            `Already received request from ${receiverEmail}`,
+          );
+        }
+        const { password, ...userData } = receiver;
+        return userData;
       },
     ),
   },

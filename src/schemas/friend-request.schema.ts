@@ -2,6 +2,7 @@ import gql from "graphql-tag";
 
 export const friendRequestSchema = gql`
   type User {
+    id: Int!
     email: String!
     fullName: String!
   }
@@ -37,6 +38,7 @@ export const friendRequestSchema = gql`
   }
 
   type Query {
+    findUser(email: String!): User!
     getFriendRequests: AllFriendRequests!
   }
 `;
