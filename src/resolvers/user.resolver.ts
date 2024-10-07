@@ -14,6 +14,10 @@ interface UserCredentials {
   };
 }
 
+interface FindUserArgs {
+  email: string;
+}
+
 const PASSWORD_OPTIONS = {
   minLength: 8,
   minSymbols: 0,
@@ -76,7 +80,20 @@ export const userResolver = {
         where: { email: authEmail },
       });
 
-      return { email: authEmail, fullName: String(user?.fullName) };
+      return {
+        email: authEmail,
+        fullName: String(user?.fullName),
+        id: Number(user?.id),
+      };
+    },
+    findUser: async (_parent: unknown, args: FindUserArgs) => {
+      const { email } = args;
+      const user = await prisma.user.findFirst({ where: { email } });
+      if (!user) {
+        throw new GraphQLError(`Can not find ${email}`);
+      }
+      const { password, ...userData } = user;
+      return userData;
     },
   },
   Mutation: {

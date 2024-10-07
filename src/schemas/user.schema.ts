@@ -6,6 +6,7 @@ export const userSchema = gql`
   }
 
   type UserData {
+    id: Int!
     fullName: String!
     email: String!
   }
@@ -24,6 +25,7 @@ export const userSchema = gql`
   type Query {
     loginUser(user: LoginInput!): LoginToken!
     auth: UserData!
+    findUser(email: String!): UserData!
   }
 
   type Mutation {
