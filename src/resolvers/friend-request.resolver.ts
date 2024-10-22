@@ -1,5 +1,5 @@
 import { GraphQLError } from "graphql";
-import { AuthContext } from "../interfaces/auth-context.interface";
+import { GraphQLContext } from "../";
 import { PrismaClient } from "@prisma/client";
 
 interface SendFriendRequestArgs {
@@ -22,7 +22,12 @@ const getIdFromEmail = async (email: string) => {
 };
 
 const isLoggedIn = (resolver: Function) => {
-  return (parent: unknown, args: unknown, ctx: AuthContext, info: unknown) => {
+  return (
+    parent: unknown,
+    args: unknown,
+    ctx: GraphQLContext,
+    info: unknown,
+  ) => {
     const { authEmail } = ctx;
     if (!authEmail) {
       throw new GraphQLError("Please log in to continue");
@@ -36,7 +41,7 @@ const handleFriendRequest = (resolver: Function) => {
   return async (
     parent: unknown,
     args: HandleFriendRequestArgs,
-    ctx: AuthContext,
+    ctx: GraphQLContext,
     info: unknown,
   ) => {
     const { id } = args;
@@ -67,7 +72,7 @@ const isValidId = (resolver: Function) => {
   return async (
     parent: unknown,
     args: HandleFriendRequestArgs,
-    ctx: AuthContext,
+    ctx: GraphQLContext,
     info: unknown,
   ) => {
     const { id } = args;
@@ -89,7 +94,7 @@ const isValidId = (resolver: Function) => {
 export const friendRequestResolver = {
   Query: {
     getFriendRequests: isLoggedIn(
-      async (_parent: unknown, _args: unknown, ctx: AuthContext) => {
+      async (_parent: unknown, _args: unknown, ctx: GraphQLContext) => {
         const userEmail = String(ctx.authEmail);
 
         const userId = Number(await getIdFromEmail(userEmail));
@@ -117,7 +122,7 @@ export const friendRequestResolver = {
       },
     ),
     findUser: isLoggedIn(
-      async (_parent: unknown, args: FindUserArgs, ctx: AuthContext) => {
+      async (_parent: unknown, args: FindUserArgs, ctx: GraphQLContext) => {
         const { authEmail } = ctx;
         const receiverEmail = args.email;
 
@@ -160,7 +165,7 @@ export const friendRequestResolver = {
   },
   Mutation: {
     sendFriendRequest: isLoggedIn(
-      async (_: unknown, args: SendFriendRequestArgs, ctx: AuthContext) => {
+      async (_: unknown, args: SendFriendRequestArgs, ctx: GraphQLContext) => {
         const { receiverId } = args;
 
         const senderEmail = String(ctx.authEmail);
@@ -250,7 +255,11 @@ export const friendRequestResolver = {
     ),
     cancelFriendRequest: isLoggedIn(
       isValidId(
-        async (_: unknown, args: HandleFriendRequestArgs, ctx: AuthContext) => {
+        async (
+          _: unknown,
+          args: HandleFriendRequestArgs,
+          ctx: GraphQLContext,
+        ) => {
           const { id } = args;
           const friendRequest = await prisma.friendRequest.findFirst({
             where: { id },

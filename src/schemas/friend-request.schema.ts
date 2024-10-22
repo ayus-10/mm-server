@@ -41,4 +41,12 @@ export const friendRequestSchema = gql`
     findUser(email: String!): User!
     getFriendRequests: AllFriendRequests!
   }
+
+  type Subscription {
+    friendRequestSent: ModifiedFriendRequest!
+    friendRequestReceived: ModifiedFriendRequest!
+    friendRequestAccepted: ModifiedFriendRequest!
+    friendRequestRejected: ModifiedFriendRequest!
+    friendRequestCanceled: ModifiedFriendRequest!
+  }
 `;
